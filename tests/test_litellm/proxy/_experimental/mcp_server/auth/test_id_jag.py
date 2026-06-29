@@ -457,18 +457,20 @@ async def test_resolve_mcp_auth_routes_to_id_jag():
 
 
 @pytest.mark.asyncio
-async def test_resolve_mcp_auth_id_jag_without_subject_token():
-    """Without a subject_token, ID-JAG does not call the handler and returns no token."""
-    server = _id_jag_server(authentication_token=None)
+async def test_resolve_mcp_auth_id_jag_without_subject_token_fails_closed():
+    """Without a subject_token, an ID-JAG server must fail closed rather than fall back to
+    the static authentication_token; otherwise a caller with only the LiteLLM key bypasses
+    the per-user identity assertion."""
+    server = _id_jag_server(authentication_token="static-server-secret")
     mock_handler = AsyncMock()
 
     with patch(
         "litellm.proxy._experimental.mcp_server.auth.id_jag.mcp_id_jag_handler",
         mock_handler,
     ):
-        result = await resolve_mcp_auth(server, subject_token=None)
+        with pytest.raises(ValueError, match="ID-JAG"):
+            await resolve_mcp_auth(server, subject_token=None)
 
-    assert result is None
     mock_handler.exchange_token.assert_not_called()
 
 

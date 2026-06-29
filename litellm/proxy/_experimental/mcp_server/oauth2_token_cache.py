@@ -289,13 +289,14 @@ async def resolve_mcp_auth(
     if mcp_auth_header:
         return mcp_auth_header
     if server.has_id_jag_config:
-        if subject_token:
-            return await id_jag.mcp_id_jag_handler.exchange_token(subject_token, server)
-        verbose_logger.warning(
-            "MCP server '%s' is configured for ID-JAG but no subject_token was provided. "
-            "The request will proceed without authentication.",
-            server.server_id,
-        )
+        if not subject_token:
+            raise ValueError(
+                f"MCP server '{server.server_id}' is configured for ID-JAG "
+                "(auth_type='oauth2_id_jag') but the request carried no caller identity token. "
+                "ID-JAG asserts the calling user's identity to the upstream, so it cannot fall "
+                "back to a static or client-credentials token; the request is refused."
+            )
+        return await id_jag.mcp_id_jag_handler.exchange_token(subject_token, server)
     if server.has_token_exchange_config:
         if subject_token:
             return await token_exchange.mcp_token_exchange_handler.exchange_token(
