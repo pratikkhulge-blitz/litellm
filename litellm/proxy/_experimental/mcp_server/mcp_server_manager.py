@@ -1304,8 +1304,10 @@ class MCPServerManager:
             id_jag_resource=(
                 credentials_dict.get("id_jag_resource") if credentials_dict else None
             ),
-            client_private_key=(
-                credentials_dict.get("client_private_key") if credentials_dict else None
+            client_private_key=self._decrypt_credential_field(
+                credentials_dict.get("client_private_key") if credentials_dict else None,
+                "client_private_key",
+                credentials_are_encrypted,
             ),
             client_private_key_id=(
                 credentials_dict.get("client_private_key_id")
